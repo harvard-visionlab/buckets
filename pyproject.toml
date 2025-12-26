@@ -1,0 +1,33 @@
+[project]
+name = "visionlab-buckets"
+version = "0.1.0"
+description = "S3 bucket mounting utilities for research workflows"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.9"
+dependencies = []  # Zero runtime deps - rclone/fuse installed separately
+
+[project.optional-dependencies]
+dev = ["pytest", "ruff"]
+
+[project.scripts]
+mount-bucket = "visionlab.buckets.cli:mount_cli"
+unmount-bucket = "visionlab.buckets.cli:unmount_cli"
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["visionlab.buckets"]
+
+[tool.setuptools.package-dir]
+"visionlab.buckets" = "buckets"
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W"]
+ignore = ["E501"]
