@@ -16,7 +16,6 @@ from .platform import (
     check_fuse,
     check_rclone,
     get_default_root,
-    get_job_tag,
     get_mount_base,
     get_user,
     is_linux,
@@ -151,7 +150,7 @@ def _do_mount(
 ) -> None:
     """Execute rclone mount command."""
     if log_file is None:
-        log_dir = Path("/tmp") / get_user() / "rclone-logs" / get_job_tag()
+        log_dir = Path("/tmp") / get_user() / "rclone-logs"
         log_dir.mkdir(parents=True, exist_ok=True)
         log_file = log_dir / f"{bucket_name}.log"
 
@@ -321,7 +320,7 @@ def mount_bucket(
         _do_mount(bucket_name, mount_point, remote_name)
 
         if not _poll_until_mounted(mount_point):
-            log_file = Path("/tmp") / get_user() / "rclone-logs" / get_job_tag() / f"{bucket_name}.log"
+            log_file = Path("/tmp") / get_user() / "rclone-logs" / f"{bucket_name}.log"
             raise MountError(f"Mount failed. Check logs: {log_file}")
 
         if verbose:

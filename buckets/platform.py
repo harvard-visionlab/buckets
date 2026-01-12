@@ -111,37 +111,24 @@ def get_default_root() -> Path:
     Get platform-appropriate default root directory for bucket symlinks.
 
     - SLURM jobs: /tmp/<user>/s3_buckets (node-local storage)
-    - Interactive: current working directory
+    - Lightning/other: ~/s3_buckets (persistent home)
     """
     if is_slurm():
         # Use node-local /tmp for SLURM jobs
         return Path("/tmp") / getpass.getuser() / "s3_buckets"
     else:
-        # Use current directory - more intuitive for interactive use
-        return Path.cwd()
-
-
-def get_job_tag() -> str:
-    """
-    Get job isolation tag.
-
-    For SLURM jobs, uses SLURM_JOB_ID (consistent across nodes in multi-node jobs).
-    For interactive sessions, returns 'interactive'.
-    """
-    return os.environ.get("SLURM_JOB_ID", "interactive")
+        # Use home directory for persistent storage
+        return Path.home() / "s3_buckets"
 
 
 def get_mount_base() -> Path:
     """
     Get base directory for actual rclone mount points.
 
-    Mounts go in /tmp/<user>/rclone/<job_tag>/<bucket_name>
+    Mounts go in /tmp/<user>/rclone/<bucket_name>
     Symlinks point from root_dir to these mounts.
-
-    Uses job_tag for isolation (SLURM_JOB_ID or 'interactive') to ensure
-    consistent paths across nodes in multi-node distributed jobs.
     """
-    return Path("/tmp") / getpass.getuser() / "rclone" / get_job_tag()
+    return Path("/tmp") / getpass.getuser() / "rclone"
 
 
 def get_user() -> str:
