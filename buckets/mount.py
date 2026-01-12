@@ -41,8 +41,60 @@ def _normalize_bucket_name(bucket_name: str) -> str:
     return bucket_name.replace("s3://", "").strip("/")
 
 
+def _is_stale_mount(path: Path) -> bool:
+    """
+    Check if a path is a stale/zombie FUSE mount.
+
+    A stale mount occurs when the FUSE daemon dies but the mount point
+    remains registered. Accessing it gives "Transport endpoint is not connected".
+    """
+    try:
+        path.stat()
+        return False
+    except OSError as e:
+        # ENOTCONN (107) = Transport endpoint is not connected
+        return e.errno == 107
+
+
+def _cleanup_stale_mount(path: Path, verbose: bool = False) -> bool:
+    """
+    Attempt to clean up a stale FUSE mount.
+
+    Returns True if cleanup was successful or not needed.
+    """
+    if not _is_stale_mount(path):
+        return True
+
+    if verbose:
+        print(f"Cleaning up stale mount: {path}")
+
+    if is_linux():
+        for cmd in ["fusermount3", "fusermount"]:
+            result = subprocess.run(
+                [cmd, "-uz", str(path)],
+                capture_output=True,
+                text=True,
+            )
+            if result.returncode == 0:
+                return True
+    elif is_macos():
+        result = subprocess.run(
+            ["umount", str(path)],
+            capture_output=True,
+            text=True,
+        )
+        if result.returncode == 0:
+            return True
+
+    return False
+
+
 def _is_mountpoint_active(path: Path) -> bool:
     """Check if a path is an active mount point."""
+    # First check for stale mount
+    if _is_stale_mount(path):
+        return False
+
     if not path.exists():
         return False
 
@@ -236,6 +288,11 @@ def mount_bucket(
     s3_ok, s3_msg = _test_s3_access(bucket_name, remote_name)
     if not s3_ok:
         raise MountError(s3_msg)
+
+    # Clean up stale mount if present
+    if _is_stale_mount(mount_point):
+        if not _cleanup_stale_mount(mount_point, verbose=verbose):
+            raise MountError(f"Failed to clean up stale mount at {mount_point}")
 
     # Create directories
     mount_point.parent.mkdir(parents=True, exist_ok=True)
