@@ -111,14 +111,14 @@ def get_default_root() -> Path:
     Get platform-appropriate default root directory for bucket symlinks.
 
     - SLURM jobs: /tmp/<user>/s3_buckets (node-local storage)
-    - Lightning/other: ~/s3_buckets (persistent home)
+    - Interactive: current working directory
     """
     if is_slurm():
         # Use node-local /tmp for SLURM jobs
         return Path("/tmp") / getpass.getuser() / "s3_buckets"
     else:
-        # Use home directory for persistent storage
-        return Path.home() / "s3_buckets"
+        # Use current directory - more intuitive for interactive use
+        return Path.cwd()
 
 
 def get_job_tag() -> str:
