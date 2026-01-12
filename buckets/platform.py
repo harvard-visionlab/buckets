@@ -121,14 +121,27 @@ def get_default_root() -> Path:
         return Path.home() / "s3_buckets"
 
 
+def get_job_tag() -> str:
+    """
+    Get job isolation tag.
+
+    For SLURM jobs, uses SLURM_JOB_ID (consistent across nodes in multi-node jobs).
+    For interactive sessions, returns 'interactive'.
+    """
+    return os.environ.get("SLURM_JOB_ID", "interactive")
+
+
 def get_mount_base() -> Path:
     """
     Get base directory for actual rclone mount points.
 
-    Mounts go in /tmp/<user>/rclone/<bucket_name>
+    Mounts go in /tmp/<user>/rclone/<job_tag>/<bucket_name>
     Symlinks point from root_dir to these mounts.
+
+    Uses job_tag for isolation (SLURM_JOB_ID or 'interactive') to ensure
+    consistent paths across nodes in multi-node distributed jobs.
     """
-    return Path("/tmp") / getpass.getuser() / "rclone"
+    return Path("/tmp") / getpass.getuser() / "rclone" / get_job_tag()
 
 
 def get_user() -> str:

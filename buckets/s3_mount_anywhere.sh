@@ -27,9 +27,10 @@ case "$OS" in
   *)      echo "ERROR: Unsupported OS: $OS"; exit 1 ;;
 esac
 
-# Paths
-NODE_LOCAL_MP="/tmp/$USER/rclone/${BUCKET_NAME}"
-LOG_DIR="/tmp/$USER/rclone-logs"
+# Paths - use job ID for isolation (consistent across nodes in multi-node jobs)
+JOB_TAG="${SLURM_JOB_ID:-interactive}"
+NODE_LOCAL_MP="/tmp/$USER/rclone/${JOB_TAG}/${BUCKET_NAME}"
+LOG_DIR="/tmp/$USER/rclone-logs/${JOB_TAG}"
 LOG_FILE="${LOG_DIR}/${BUCKET_NAME}.log"
 LINK_PATH="${MOUNT_PATH%/}/${BUCKET_NAME}"
 
