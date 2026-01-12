@@ -180,9 +180,16 @@ def _do_mount(
         str(log_file),
     ]
 
-    result = subprocess.run(cmd, capture_output=True, text=True)
+    # Fully detach daemon: new session + redirect all I/O to devnull
+    result = subprocess.run(
+        cmd,
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        start_new_session=True,
+    )
     if result.returncode != 0:
-        raise MountError(f"rclone mount failed: {result.stderr}")
+        raise MountError(f"rclone mount failed (exit code {result.returncode})")
 
 
 def _poll_until_mounted(mount_point: Path, timeout: int = 10) -> bool:
