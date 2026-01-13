@@ -14,6 +14,7 @@ from .mount import (
     get_mount_status,
     list_mounts,
     mount_bucket,
+    unlink_bucket,
     unmount_bucket,
 )
 from .platform import get_default_root, get_platform_name
@@ -187,6 +188,51 @@ Examples:
         )
     except UnmountError as e:
         print(f"Error: {e}", file=sys.stderr)
+        sys.exit(1)
+
+
+def unlink_cli() -> None:
+    """CLI entry point for unlink-bucket command."""
+    parser = argparse.ArgumentParser(
+        prog="unlink-bucket",
+        description="Remove a symlink to a bucket without unmounting",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  unlink-bucket teamspace-lrm
+  unlink-bucket teamspace-lrm --root ~/other-project
+
+Note: This only removes the symlink. The bucket remains mounted.
+Use unmount-bucket to fully unmount.
+        """,
+    )
+
+    parser.add_argument(
+        "bucket",
+        help="S3 bucket name to unlink",
+    )
+    parser.add_argument(
+        "--root",
+        "-r",
+        metavar="DIR",
+        help="Directory containing the symlink (default: current directory)",
+    )
+    parser.add_argument(
+        "--quiet",
+        "-q",
+        action="store_true",
+        help="Suppress progress messages",
+    )
+
+    args = parser.parse_args()
+
+    removed = unlink_bucket(
+        args.bucket,
+        root_dir=args.root,
+        verbose=not args.quiet,
+    )
+
+    if not removed and not args.quiet:
         sys.exit(1)
 
 

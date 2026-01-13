@@ -347,6 +347,40 @@ def mount_bucket(
     return symlink_path
 
 
+def unlink_bucket(
+    bucket_name: str,
+    root_dir: Optional[str | Path] = None,
+    verbose: bool = False,
+) -> bool:
+    """
+    Remove a symlink to a bucket without unmounting.
+
+    Use this to remove a symlink from a specific location while keeping
+    the mount active (e.g., if you have symlinks in multiple places).
+
+    Args:
+        bucket_name: Name of the S3 bucket (with or without s3:// prefix)
+        root_dir: Directory containing the symlink. Defaults to cwd.
+        verbose: Print progress messages
+
+    Returns:
+        True if symlink was removed, False if it didn't exist
+    """
+    bucket_name = _normalize_bucket_name(bucket_name)
+    root_dir = Path(root_dir).expanduser() if root_dir else get_default_root()
+    symlink_path = root_dir / bucket_name
+
+    if not symlink_path.is_symlink():
+        if verbose:
+            print(f"No symlink at: {symlink_path}")
+        return False
+
+    symlink_path.unlink()
+    if verbose:
+        print(f"Removed symlink: {symlink_path}")
+    return True
+
+
 def unmount_bucket(bucket_name: str, remove_symlinks: bool = True, verbose: bool = False) -> None:
     """
     Unmount an S3 bucket.
