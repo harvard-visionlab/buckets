@@ -305,12 +305,19 @@ def mount_bucket(
     mount_point.mkdir(parents=True, exist_ok=True)
     symlink_path.parent.mkdir(parents=True, exist_ok=True)
 
-    # Check for conflicts
+    # Check for conflicts (but not if it's our own symlink)
     if symlink_path.exists() and not symlink_path.is_symlink():
         raise MountError(f"{symlink_path} exists and is not a symlink")
 
-    if _is_mountpoint_active(symlink_path):
-        raise MountError(f"{symlink_path} is already a mount point")
+    # If symlink already points to correct mount AND mount is active, we're done
+    if (
+        symlink_path.is_symlink()
+        and symlink_path.resolve() == mount_point.resolve()
+        and _is_mountpoint_active(mount_point)
+    ):
+        if verbose:
+            print(f"Already mounted: {symlink_path} -> {mount_point}")
+        return symlink_path
 
     # Mount if not already mounted
     if not _is_mountpoint_active(mount_point):
